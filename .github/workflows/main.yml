@@ -1,1 +1,48 @@
+name: Build Android APK
 
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up JDK 8
+      uses: actions/setup-java@v3
+      with:
+        java-version: '8'
+        distribution: 'zulu'
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y git zip unzip python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake
+
+    - name: Install Buildozer
+      run: |
+        pip3 install --user --upgrade buildozer cython virtualenv
+
+    - name: Set up Android SDK
+      run: |
+        mkdir -p ~/.android
+        touch ~/.android/repositories.cfg
+        yes | $HOME/.local/bin/buildozer android update sdk --no-ui
+
+    - name: Build APK
+      run: |
+        export PATH=$PATH:~/.local/bin/
+        buildozer android clean
+        buildozer android debug deploy
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: notepy-apk
+        path: bin/*.apk￼Enter
